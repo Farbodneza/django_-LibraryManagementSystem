@@ -9,9 +9,7 @@ class Member(AbstractUser):
         return self.username
 
 
-class Author(models.Model):
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
+class Author(Member):
     bio = models.TextField(blank=True)
 
 
