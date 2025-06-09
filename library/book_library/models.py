@@ -19,6 +19,7 @@ class Book(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_returned = models.BooleanField(default=True)
     description = models.TextField(null=True, blank=True)
+    slug = models.SlugField(max_length=30)
     class Meta:
         ordering = ["title"]
 
