@@ -37,9 +37,8 @@ class BookSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'authors', 'created_at']
 
 
-class BorrowedBookSerializer(serializers.ModelSerializer):
-    member = serializers.StringRelatedField()  
-    book = serializers.StringRelatedField()
-    class Meta:
-        model = BorrowedBook
-        ['id', 'book', 'member', 'borrowed_at', 'returned_at'] 
+class BorrowBooksSerializer(serializers.Serializer):
+    book_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False,
+    )
