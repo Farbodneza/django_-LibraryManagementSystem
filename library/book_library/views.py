@@ -7,6 +7,7 @@ from book_library.models import Book, Member
 from book_library import serializers
 from django.contrib.auth import authenticate
 from rest_framework import status
+from django.contrib.auth.decorators import login_required
 
 
 class RegisterUserAPIView(generics.CreateAPIView):
@@ -14,9 +15,7 @@ class RegisterUserAPIView(generics.CreateAPIView):
 
 
 
-
 class LoginAPIView(APIView):
- 
     def post(self, request, *args, **kwargs):
         serializer = serializers.MemberLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -44,8 +43,13 @@ class LoginAPIView(APIView):
 #                 user = authenticate(username=user.username, password=password)
 #         return Response({'error': 'Invalid Member'}, status=status.HTTP_401_UNAUTHORIZED)
 
+@login_required
+class AddBookAPIView(generics.CreateAPIView):
+    queryset = Book.objects.all()
+    serializer_class = serializers.BookSerializer
 
-class BookListAPIView(generics.ListCreateAPIView):
+@login_required
+class BookListAPIView(generics.ListAPIView):
     queryset = Book.objects.all()
     serializer_class = serializers.BookSerializer
     
