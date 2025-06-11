@@ -23,9 +23,6 @@ class RegisterUserAPIView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         
     
-
-
-
 class LoginAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = serializers.MemberLoginSerializer(data=request.data)
@@ -41,6 +38,13 @@ class LoginAPIView(APIView):
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid Data'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+class UserLogoutAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        logout(request)
+        return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_204_NO_CONTENT)
+
+    
 @login_required
 class AddBookAPIView(generics.CreateAPIView):
     queryset = Book.objects.all()
