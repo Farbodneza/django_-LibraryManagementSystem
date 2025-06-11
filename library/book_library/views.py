@@ -1,17 +1,28 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import mixins
 from book_library.models import Book, Member,BorrowedBook
 from book_library import serializers
-from django.contrib.auth import authenticate
+from django.contrib.auth import logout, authenticate, login
 from rest_framework import status
 from django.contrib.auth.decorators import login_required
 
 
 class RegisterUserAPIView(generics.CreateAPIView):
+    queryset = Member.objects.all()
     serializer_class = serializers.MemberSerializer
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        login(request, user)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        
+    
 
 
 
@@ -29,7 +40,6 @@ class LoginAPIView(APIView):
                 'username': user.username
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid Data'}, status=status.HTTP_401_UNAUTHORIZED)
-    
 
 @login_required
 class AddBookAPIView(generics.CreateAPIView):
