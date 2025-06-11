@@ -8,6 +8,7 @@ from book_library import serializers
 from django.contrib.auth import logout, authenticate, login
 from rest_framework import status
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 
 
 class RegisterUserAPIView(generics.CreateAPIView):
@@ -24,7 +25,7 @@ class LoginAPIView(APIView):
 
         user = authenticate(request, username=username, password=password)
 
-        if user is not None:
+        if user:
             login(request, user)  
             return Response({
                 'user_id': user.id,
@@ -81,6 +82,35 @@ class BorrowBookAPIView(APIView):
 
         output_serializer = serializers.BookSerializer(successful_borrowed_books, many=True)
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ReturnBooksAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = serializers.BorrowedBookSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        book_ids = serializer.validated_data['book_ids']
+        member = request.user
+        successful_returned_books = []
+
+        for book_id in book_ids:
+            book = get_object_or_404(Book, pk=book_id)
+
+            if BorrowedBook.objects.filter(book=book, returned_at__isnull=False).exists():
+                return Response(
+                    {"error": f"Book '{book.title}' (ID: {book_id}) is already ."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            borrowed_book = get_object_or_404(BorrowedBook, book=book, member=member)
+            borrowed_book.returned_at = timezone.now()
+            book.is_returned = True
+            borrowed_book.save()
+            book.save()
+            successful_returned_books.append(book)
+
+        output_serializer = serializers.BookSerializer(successful_returned_books, many=True)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
 
 
 class AuthorAPIView(generics.RetrieveAPIView):
