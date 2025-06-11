@@ -8,6 +8,6 @@ urlpatterns = [
     path('Books/', views.BookListAPIView.as_view(), name = 'books-list'),
     path('Books/Add', views.AddBookAPIView.as_view(), name = 'create-book'),
     path('Books/<slug:slug>', views.BookDetailAPIView.as_view(), name = 'books-details'),
-    path('Books/Borrow', views.BorrowBookAPIView.as_view(), name = 'borrow-books'),
+    path('Books/Borrow/', views.BorrowBookAPIView.as_view(), name = 'borrow-books'),
     path('Books/Authors/<slug:slug>', views.AuthorAPIView.as_view(), name = 'Author'),
 ]
