@@ -1,4 +1,4 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
@@ -13,15 +13,6 @@ from django.contrib.auth.decorators import login_required
 class RegisterUserAPIView(generics.CreateAPIView):
     queryset = Member.objects.all()
     serializer_class = serializers.MemberSerializer
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        login(request, user)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        
     
 class LoginAPIView(APIView):
     def post(self, request, *args, **kwargs):
@@ -30,13 +21,18 @@ class LoginAPIView(APIView):
 
         username = serializer.validated_data['username']
         password = serializer.validated_data['password']
-        user = authenticate(username=username, password=password)
-        if user:
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)  
             return Response({
-                'user_id': user.pk,
-                'username': user.username
+                'user_id': user.id,
+                'username': user.username,
+                'message': 'Login successful'
             }, status=status.HTTP_200_OK)
-        return Response({'error': 'Invalid Data'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class LogoutAPIView(APIView):
@@ -44,46 +40,46 @@ class LogoutAPIView(APIView):
         logout(request)
         return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_204_NO_CONTENT)
 
-    
-@login_required
+
 class AddBookAPIView(generics.CreateAPIView):
     queryset = Book.objects.all()
     serializer_class = serializers.BookSerializer
 
 
-@login_required
 class BookListAPIView(generics.ListAPIView):
     queryset = Book.objects.all()
     serializer_class = serializers.BookSerializer
     
 
-@login_required
 class BookDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Book.objects.all()
     serializer_class = serializers.BookSerializer
     lookup_field = 'slug'
 
 
-@login_required
 class BorrowBookAPIView(APIView):
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         serializer = serializers.BorrowedBookSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        books_ids = serializer.validated_data['book_ids']
+        book_ids = serializer.validated_data['book_ids']
         member = request.user
-
         successful_borrowed_books = []
-        for book_id in books_ids:
-            book = Book.objects.get(pk=id)
-            if BorrowedBook.objects.filte(book=book, returned_at__isnull=True):
-                return Response(f"Book '{book.title}' (ID: {book_id}) is currently unavailable.")
 
-            borrowed_book = BorrowedBook.objects.create(book=book, member=member)
+        for book_id in book_ids:
+            book = get_object_or_404(Book, pk=book_id)
+
+            if BorrowedBook.objects.filter(book=book, returned_at__isnull=True).exists():
+                return Response(
+                    {"error": f"Book '{book.title}' (ID: {book_id}) is currently unavailable."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            BorrowedBook.objects.create(book=book, member=member)
             book.is_returned = False
-            successful_borrowed_books.append(borrowed_book)
-            
-        output_serializer = serializers.BorrowedBookSerializer(borrowed_book, many=True)
+            book.save()
+            successful_borrowed_books.append(book)
+
+        output_serializer = serializers.BookSerializer(successful_borrowed_books, many=True)
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
 
