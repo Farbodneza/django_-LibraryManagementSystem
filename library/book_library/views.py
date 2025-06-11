@@ -39,7 +39,7 @@ class LoginAPIView(APIView):
         return Response({'error': 'Invalid Data'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class UserLogoutAPIView(APIView):
+class LogoutAPIView(APIView):
     def post(self, request, *args, **kwargs):
         logout(request)
         return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_204_NO_CONTENT)
