@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import mixins
-from book_library.models import Book, Member,BorrowedBook
+from book_library.models import Book, Member,BorrowedBook,Author
 from book_library import serializers
 from django.contrib.auth import logout, authenticate, login
 from rest_framework import status
@@ -86,5 +86,10 @@ class BorrowBookAPIView(APIView):
         output_serializer = serializers.BorrowedBookSerializer(borrowed_book, many=True)
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
+
+class AuthorAPIView(generics.RetrieveAPIView):
+    queryset = Author.objects.all()
+    serializer_class = serializers.Author
+    lookup_field = 'slug'
 
 
